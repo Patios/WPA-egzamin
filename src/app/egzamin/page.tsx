@@ -22,14 +22,19 @@ import {
   type ActiveExam,
 } from "@/lib/storage";
 
-function createExam(): ActiveExam {
+function createExam(reveal: "end" | "immediate"): ActiveExam {
   return {
     questionIds: shuffle(questions).slice(0, EXAM_SIZE).map((question) => question.id),
     answers: {},
     index: 0,
     status: "running",
     recorded: false,
+    reveal,
   };
+}
+
+function isImmediate(exam: ActiveExam): boolean {
+  return exam.reveal === "immediate";
 }
 
 export default function ExamPage() {
@@ -118,6 +123,7 @@ export default function ExamPage() {
         const key = event.key.toLowerCase();
         const option = key === "1" ? "a" : key === "2" ? "b" : key === "3" ? "c" : key;
         if (option === "a" || option === "b" || option === "c") {
+          if (isImmediate(currentExam) && currentExam.answers[questionId]) return currentExam;
           return { ...currentExam, answers: { ...currentExam.answers, [questionId]: option } };
         }
         if (event.key === "ArrowRight" && currentExam.index < currentExam.questionIds.length - 1) {
@@ -143,21 +149,35 @@ export default function ExamPage() {
         <p className="text-sm font-semibold tracking-[0.14em] text-gold uppercase">Egzamin próbny</p>
         <h1 className="mt-2 font-serif text-4xl leading-tight">20 pytań, dwa błędy</h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          Zestaw jest losowany z całej puli {questions.length} pytań. Odpowiedzi zobaczysz dopiero po
-          oddaniu arkusza. Zaliczenie to co najmniej {EXAM_SIZE - MAX_MISTAKES} poprawnych odpowiedzi.
+          Zestaw jest losowany z całej puli {questions.length} pytań. Zaliczenie to co najmniej{" "}
+          {EXAM_SIZE - MAX_MISTAKES} poprawnych odpowiedzi.
         </p>
-        <ul className="mt-6 space-y-2 text-base leading-relaxed">
-          <li>Pytania można zmieniać do momentu sprawdzenia.</li>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            className="rounded-2xl border border-line bg-card px-5 py-5 text-left hover:border-forest"
+            onClick={() => update(createExam("end"))}
+          >
+            <span className="block font-semibold">Jak na egzaminie</span>
+            <span className="mt-2 block text-sm leading-relaxed text-muted">
+              Odpowiedź można zmienić. Klucz pojawia się po oddaniu całego arkusza.
+            </span>
+          </button>
+          <button
+            type="button"
+            className="rounded-2xl border border-line bg-card px-5 py-5 text-left hover:border-forest"
+            onClick={() => update(createExam("immediate"))}
+          >
+            <span className="block font-semibold">Z odpowiedzią od razu</span>
+            <span className="mt-2 block text-sm leading-relaxed text-muted">
+              Po zaznaczeniu widać poprawną odpowiedź. Tej odpowiedzi nie da się już zmienić.
+            </span>
+          </button>
+        </div>
+        <ul className="mt-6 space-y-2 text-base leading-relaxed text-muted">
           <li>Klawisze A, B, C albo 1, 2, 3 zaznaczają odpowiedź.</li>
           <li>Niedokończony egzamin zostaje w tej karcie przeglądarki.</li>
         </ul>
-        <button
-          type="button"
-          className="mt-8 rounded-full bg-forest px-6 py-3 font-semibold text-paper hover:bg-forest-bright"
-          onClick={() => update(createExam())}
-        >
-          Losuj zestaw
-        </button>
       </div>
     );
   }
@@ -218,10 +238,20 @@ export default function ExamPage() {
             className="rounded-full bg-forest px-6 py-3 font-semibold text-paper hover:bg-forest-bright"
             onClick={() => {
               clearActiveExam();
-              update(createExam());
+              update(createExam(exam.reveal === "immediate" ? "immediate" : "end"));
             }}
           >
             Nowy egzamin
+          </button>
+          <button
+            type="button"
+            className="rounded-full border border-line px-6 py-3 font-semibold"
+            onClick={() => {
+              clearActiveExam();
+              setExam(null);
+            }}
+          >
+            Inny tryb
           </button>
           {wrong.length > 0 && (
             <Link
@@ -240,6 +270,14 @@ export default function ExamPage() {
 
   const atEnd = exam.index === exam.questionIds.length - 1;
   const complete = answeredCount === exam.questionIds.length;
+  const immediate = isImmediate(exam);
+  const chosen = exam.answers[current.id] ?? null;
+  const revealed = immediate && chosen !== null;
+  const mistakesSoFar = exam.questionIds.filter((id) => {
+    const question = questionById.get(id);
+    const answer = exam.answers[id];
+    return question && answer && answer !== question.answer;
+  }).length;
 
   return (
     <div>
@@ -248,7 +286,9 @@ export default function ExamPage() {
           Pytanie {exam.index + 1} z {exam.questionIds.length}
         </p>
         <p className="text-sm text-muted">
-          Zaznaczone {answeredCount}/{exam.questionIds.length}
+          {immediate
+            ? `${countLabel(mistakesSoFar, "błąd", "błędy", "błędów")} · ${answeredCount}/${exam.questionIds.length}`
+            : `Zaznaczone ${answeredCount}/${exam.questionIds.length}`}
         </p>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
@@ -262,18 +302,31 @@ export default function ExamPage() {
       <div className="mt-6">
         <OptionList
           question={current}
-          selected={exam.answers[current.id] ?? null}
-          revealed={false}
-          onSelect={(option: OptionId) =>
-            update({ ...exam, answers: { ...exam.answers, [current.id]: option } })
+          selected={chosen}
+          revealed={revealed}
+          onSelect={
+            revealed
+              ? undefined
+              : (option: OptionId) =>
+                  update({ ...exam, answers: { ...exam.answers, [current.id]: option } })
           }
         />
       </div>
+      {revealed && (
+        <div className={`mt-5 rounded-2xl px-4 py-4 ${chosen === current.answer ? "bg-moss" : "bg-fail-soft"}`}>
+          <p className="font-semibold">{chosen === current.answer ? "Dobrze." : "To nie ta odpowiedź."}</p>
+          {current.citation && <p className="mt-1 text-sm text-muted">{current.citation}</p>}
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-2">
         {exam.questionIds.map((id, index) => {
           const active = index === exam.index;
-          const filled = Boolean(exam.answers[id]);
+          const answer = exam.answers[id];
+          const question = questionById.get(id);
+          const marked = Boolean(answer);
+          const right = immediate && marked && question && answer === question.answer;
+          const wrong = immediate && marked && question && answer !== question.answer;
           return (
             <button
               key={id}
@@ -283,9 +336,13 @@ export default function ExamPage() {
               className={`h-9 w-9 rounded-full text-sm font-semibold ${
                 active
                   ? "bg-forest text-paper"
-                  : filled
+                  : right
                     ? "bg-moss text-forest"
-                    : "border border-line bg-card text-muted"
+                    : wrong
+                      ? "bg-fail-soft text-fail"
+                      : marked
+                        ? "bg-moss text-forest"
+                        : "border border-line bg-card text-muted"
               }`}
             >
               {index + 1}

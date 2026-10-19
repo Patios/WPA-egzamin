@@ -28,6 +28,7 @@ export type ActiveExam = {
   index: number;
   status: "running" | "done";
   recorded: boolean;
+  reveal?: "end" | "immediate";
   finishedAt?: string;
 };
 
