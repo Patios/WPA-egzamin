@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --paper: #f3efe6;
+  --ink: #1c1914;
+  --muted: #655f56;
+  --line: #e3dcd0;
+  --card: #fffcf7;
+  --raised: #ffffff;
+  --forest: #16382c;
+  --forest-bright: #1f6b45;
+  --moss: #e6f3eb;
+  --fail: #9c2f2c;
+  --fail-soft: #fbeceb;
+  --gold: #8a6232;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121614;
+  --ink: #f3efe6;
+  --muted: #c3b9ac;
+  --line: #313a34;
+  --card: #1b211e;
+  --raised: #24302a;
+  --forest: #c5e6d4;
+  --forest-bright: #e7f6ee;
+  --moss: #1c3d2e;
+  --fail: #ffb4ae;
+  --fail-soft: #3d2422;
+  --gold: #e6c48a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-card: var(--card);
+  --color-raised: var(--raised);
+  --color-forest: var(--forest);
+  --color-forest-bright: var(--forest-bright);
+  --color-moss: var(--moss);
+  --color-fail: var(--fail);
+  --color-fail-soft: var(--fail-soft);
+  --color-gold: var(--gold);
+  --font-sans: var(--font-source-sans);
+  --font-serif: var(--font-source-serif);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--forest) 35%, transparent);
+}
+
+button,
+a,
+summary {
+  -webkit-tap-highlight-color: transparent;
 }
