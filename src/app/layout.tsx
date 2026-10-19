@@ -33,9 +33,23 @@ export default function RootLayout({
         </Script>
         <Header />
         <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
-        <footer className="mx-auto max-w-3xl px-4 pb-10 text-sm leading-relaxed text-muted sm:px-6">
-          Pytania i zaznaczone odpowiedzi pochodzą z oficjalnej puli Małopolskiej WPA na egzamin
-          przeprowadzany na podstawie art. 16 ust. 1 ustawy o broni i amunicji.
+        <footer className="mx-auto max-w-3xl space-y-3 px-4 pb-10 text-sm leading-relaxed text-muted sm:px-6">
+          <p>
+            Pytania i zaznaczone odpowiedzi pochodzą z oficjalnej puli Małopolskiej WPA na egzamin
+            przeprowadzany na podstawie art. 16 ust. 1 ustawy o broni i amunicji.
+          </p>
+          <p>
+            Jeśli strona się przydaje, możesz{" "}
+            <a
+              href="https://buycoffee.to/patios"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-forest underline-offset-2 hover:underline"
+            >
+              postawić autorowi kawę
+            </a>
+            .
+          </p>
         </footer>
       </body>
     </html>
